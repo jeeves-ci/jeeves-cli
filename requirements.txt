@@ -1,1 +1,2 @@
 https://github.com/jeeves-ci/jeeves-commons/archive/master.zip
+https://github.com/jeeves-ci/jeeves-rest-client/archive/master.zip
