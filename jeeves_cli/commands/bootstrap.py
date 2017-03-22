@@ -53,8 +53,7 @@ def bootstrap_local(number_of_minions,
 
     bs = JeevesBootstrapper()
     bs.bootstrap(num_minions=number_of_minions,
-                 num_workers=number_of_workers,
-                 project_org_dir=storage.get_project_root())
+                 num_workers=number_of_workers)
 
     storage.set_rabbitmq_ip(bs.rabbit_host_ip)
     storage.set_postgres_ip(bs.postgres_host_ip)

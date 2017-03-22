@@ -39,18 +39,16 @@ class JeevesBootstrapper(object,):
         self.postgres_host_ip = postgres_host_ip
         self.master_host_ip = master_host_ip
 
-    def bootstrap(self, num_minions, num_workers, project_org_dir=None):
+    def bootstrap(self, num_minions, num_workers):
         self._pull_base_images()
         self._start_postgres_container()
         self._start_rabbitmq_container()
 
-        master_project_dir = os.path.join(project_org_dir, 'jeeves-master')
-        self._start_master_container(project_dir=master_project_dir)
+        self._start_master_container(branch='master')
 
-        minion_project_dir = os.path.join(project_org_dir, 'jeeves-minion')
         self.start_minion_containers(num_minions,
                                      num_workers=num_workers,
-                                     project_dir=minion_project_dir)
+                                     branch='master')
 
     @staticmethod
     def teardown():
@@ -81,23 +79,20 @@ class JeevesBootstrapper(object,):
             image_name, tag = full_image_name.split(':')
             docker.pull_image(name=image_name, tag=tag, stream=verbose)
 
-    def _start_master_container(self, project_dir=None):
+    def _start_master_container(self, branch='master'):
         # Install and start jeeves master
-        proj_root = project_dir or self._get_project_root('jeeves-master')
-        commons_root = self._get_project_root('jeeves-commons')
         cmd = ['sh', '-c', '-e',
-               'pip install {0} && '
-               'pip install {1} && '
-               'python {1}/rest_service/server.py'
-               .format(commons_root, proj_root)]
+               'git clone https://github.com/jeeves-ci/jeeves-master.git && '
+               'cd jeeves-master && '
+               'git checkout {branch} && '
+               'pip install -r requirements.txt . && '
+               'python rest_service/server.py'.format(branch=branch)]
         env = {
             RABBITMQ_HOST_IP_ENV: self.rabbit_host_ip,
             POSTGRES_HOST_IP_ENV: self.postgres_host_ip,
             MASTER_HOST_PORT_ENV: DEFAULT_REST_PORT
         }
-        volumes, volume_binds = self._get_service_volumes(proj_root,
-                                                          '/tmp',
-                                                          commons_root)
+        volumes, volume_binds = self._get_service_volumes('/tmp')
         logger.info('Starting Jeeves master container..')
         cid = docker.create_and_start_container(
                                  PYTHON_DOCKER_IMAGE,
@@ -108,19 +103,16 @@ class JeevesBootstrapper(object,):
                                  volume_binds=volume_binds)
         cip = docker.get_container_ip(cid)
         logger.info('Started Jeeves Master at {}'.format(cip))
-        if not wait_for_port(cip, DEFAULT_REST_PORT, 60):
+        if not wait_for_port(cip, DEFAULT_REST_PORT, 120):
             docker.remove_container(cid)
             raise RuntimeError('Timed out waiting for Jeeves Master to start.')
         self.master_host_ip = cip
         return cip
 
     @staticmethod
-    def _get_service_volumes(proj_root, tmp_dir, *args):
+    def _get_service_volumes(tmp_dir, *args):
         volumes = {}
         volume_binds = {}
-        project_volume, project_volume_binds = docker.get_volume(proj_root)
-        volume_binds.update(project_volume_binds)
-        volumes.update(project_volume)
 
         tmp_dir_volume, tmp_dir_volume_binds = docker.get_volume(tmp_dir,
                                                                  ro=False)
@@ -137,20 +129,20 @@ class JeevesBootstrapper(object,):
     def start_minion_containers(self,
                                 num_minions=None,
                                 num_workers='',
-                                project_dir=None):
-        proj_root = project_dir or self._get_project_root('jeeves-minion')
-        commons_root = self._get_project_root('jeeves-commons')
+                                branch='master'):
         logger.info('Starting {} Jeeves minion containers..'
                     .format(num_minions))
         # Install the minion on each of the containers
         cmd = ['sh', '-c', '-e',
-               'pip install {0} && '
-               'pip install {1} && '
-               'python {1}/jeeves_minion/minion.py'.format(commons_root,
-                                                           proj_root)]
+               'git clone https://github.com/jeeves-ci/jeeves-minion.git && '
+               'cd jeeves-minion && '
+               'git checkout {branch} && '
+               'pip install -r requirements.txt . && '
+               'python jeeves_minion/minion.py'.format(branch=branch)]
 
         volumes, volume_binds = self._get_service_volumes(
-            proj_root, '/tmp', commons_root, *MINION_VOLUMES_LOCAL)
+                                                        '/tmp',
+                                                        *MINION_VOLUMES_LOCAL)
         env = {
             RABBITMQ_HOST_IP_ENV: self.rabbit_host_ip,
             POSTGRES_HOST_IP_ENV: self.postgres_host_ip,
@@ -211,5 +203,5 @@ class JeevesBootstrapper(object,):
 
 if __name__ == '__main__':
     app = JeevesBootstrapper()
-    app.bootstrap(1, 3, project_org_dir='/home/adaml/dev/')
+    app.bootstrap(1, 3)
     # app.stop()
