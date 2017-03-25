@@ -43,7 +43,7 @@ class JeevesBootstrapper(object,):
         self._start_postgres_container()
         self._start_rabbitmq_container()
 
-        # self._start_master_container(branch=branch)
+        self._start_master_container(branch=branch)
 
         self.start_minion_containers(num_minions,
                                      num_workers=num_workers,

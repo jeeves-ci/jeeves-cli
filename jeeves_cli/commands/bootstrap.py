@@ -43,7 +43,7 @@ def bootstrap_local(number_of_minions,
                     number_of_workers,
                     branch):
     local_data = storage.get_local_data()
-    if not local_data or not os.path.isdir(storage.get_project_root()):
+    if not local_data:
         raise CLIParameterException('Not initialized. Run \'jvs init\'.')
 
     if not _docker_installed():
