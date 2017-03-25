@@ -35,8 +35,13 @@ def bootstrap(number_of_minions,
               help='The number of workers per Jeeves minion'
                    ' Default is set to: {}'.format(DEFAULT_NUM_MINION_WORKERS),
               default=DEFAULT_NUM_MINION_WORKERS)
+@click.option('-b', '--branch', required=False,
+              help='The Jeeves branch to bootstrap from. Default is set '
+                   'to \'master\'',
+              default='master')
 def bootstrap_local(number_of_minions,
-                    number_of_workers):
+                    number_of_workers,
+                    branch):
     local_data = storage.get_local_data()
     if not local_data or not os.path.isdir(storage.get_project_root()):
         raise CLIParameterException('Not initialized. Run \'jvs init\'.')
@@ -53,11 +58,17 @@ def bootstrap_local(number_of_minions,
 
     bs = JeevesBootstrapper()
     bs.bootstrap(num_minions=number_of_minions,
-                 num_workers=number_of_workers)
+                 num_workers=number_of_workers,
+                 branch=branch)
 
     storage.set_rabbitmq_ip(bs.rabbit_host_ip)
     storage.set_postgres_ip(bs.postgres_host_ip)
     storage.set_master_ip(bs.master_host_ip)
+    print 'Jeeves local-bootstrap ended successfully.'
+    print 'RESTful endpoint available at {0}:{1}'\
+          .format(bs.master_host_ip, '8080')
+    print 'Web-UI endpoint available at {0}:{1}'\
+          .format(bs.master_host_ip, '7778')
 
 
 def _docker_installed():

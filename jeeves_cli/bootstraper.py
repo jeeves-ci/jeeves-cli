@@ -13,7 +13,7 @@ from jeeves_commons.constants import (RABBITMQ_HOST_IP_ENV,
                                       DEFAULT_POSTGRES_PORT,
                                       MASTER_HOST_PORT_ENV,
                                       DEFAULT_REST_PORT)
-from jeeves_commons.utils import wait_for_port
+from jeeves_commons.utils import wait_for_port, which
 
 
 logger = logging.getLogger('bootstrap_logger')
@@ -26,8 +26,7 @@ RABBITMQ_CONT_NAME = 'jeeves_rabbitmq_container'
 POSTGRES_CONT_NAME = 'jeeves_postgres_container'
 
 MINION_VOLUMES_LOCAL = ['/var/run/docker.sock',
-                        # TODO:// Change to which docker cmd
-                        '/usr/bin/docker']
+                        which('docker')]
 
 
 class JeevesBootstrapper(object,):
@@ -39,16 +38,19 @@ class JeevesBootstrapper(object,):
         self.postgres_host_ip = postgres_host_ip
         self.master_host_ip = master_host_ip
 
-    def bootstrap(self, num_minions, num_workers):
+    def bootstrap(self, num_minions, num_workers, branch='master'):
         self._pull_base_images()
         self._start_postgres_container()
         self._start_rabbitmq_container()
 
-        self._start_master_container(branch='master')
+        # self._start_master_container(branch=branch)
 
         self.start_minion_containers(num_minions,
                                      num_workers=num_workers,
-                                     branch='master')
+                                     branch=branch)
+        #  TODO: add if debug:
+        # docker run --name some-pgadmin4 --link jeeves_postgres_container
+        # :postgres -p 5050:5050 -d fenglc/pgadmin4
 
     @staticmethod
     def teardown():
