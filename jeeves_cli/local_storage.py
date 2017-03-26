@@ -49,7 +49,6 @@ class LocalStorage(object):
             os.makedirs(CLI_WORKDIR)
         with open(CLI_LOCAL_DATA_FILE, 'w+') as f:
             f.write(json.dumps({}))
-        self.set_project_root()
 
 
 storage = LocalStorage()
