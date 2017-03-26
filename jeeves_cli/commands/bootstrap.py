@@ -42,8 +42,9 @@ def bootstrap_local(number_of_minions,
                     number_of_workers,
                     branch):
     local_data = storage.get_local_data()
-    if not local_data:
-        raise CLIParameterException('Not initialized. Run \'jvs init\'.')
+    if local_data:
+        raise CLIParameterException('Local env already exists. '
+                                    'Run \'jvc init\' to reset.')
 
     if not _docker_installed():
         raise CLIParameterException('Running Jeeves-CI locally requires '
