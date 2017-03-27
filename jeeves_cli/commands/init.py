@@ -10,10 +10,9 @@ from jeeves_cli.exceptions import CLIParameterException
 def init(force):
     print 'Initializing Jeeves CLI\'s local env.'
     local_data = storage.get_local_data()
-    if not local_data:
+    if not local_data or force:
         storage.init_local_storage()
+        print 'Jeeves CLI environment initialized successfully.'
     elif not force:
         raise CLIParameterException('A local jeeves env already exists.'
                                     'Use the \'-f\' flag to override it.')
-
-    print 'Jeeves CLI environment initialized successfully.'
