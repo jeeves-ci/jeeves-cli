@@ -38,9 +38,12 @@ def bootstrap(number_of_minions,
               help='The Jeeves branch to bootstrap from. Default is set '
                    'to \'master\'',
               default='master')
+@click.option('--verbose', '-v', is_flag=True, help='View verbose info.',
+              default=False)
 def bootstrap_local(number_of_minions,
                     number_of_workers,
-                    branch):
+                    branch,
+                    verbose):
     local_data = storage.get_local_data()
     if local_data:
         raise CLIParameterException('Local env already exists. '
@@ -59,7 +62,8 @@ def bootstrap_local(number_of_minions,
     bs = JeevesBootstrapper()
     bs.bootstrap(num_minions=number_of_minions,
                  num_workers=number_of_workers,
-                 branch=branch)
+                 branch=branch,
+                 verbose=verbose)
 
     storage.set_rabbitmq_ip(bs.rabbit_host_ip)
     storage.set_postgres_ip(bs.postgres_host_ip)

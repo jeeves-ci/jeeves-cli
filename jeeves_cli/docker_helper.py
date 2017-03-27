@@ -5,11 +5,14 @@ import docker
 docker_client = docker.from_env().api
 
 
-def pull_image(name, tag=None, stream=None):
-    for line in docker_client.pull(name, tag=tag, stream=stream):
-        progress = json.loads(line).get('progress', None)
-        if progress:
-            print(json.dumps(json.loads(line).get('progress'), indent=4))
+def pull_image(name, tag=None, verbose=None):
+    if verbose:
+        for line in docker_client.pull(name, tag=tag, stream=True):
+            progress = json.loads(line).get('progress', None)
+            if progress:
+                print(json.dumps(json.loads(line).get('progress'), indent=4))
+    else:
+        docker_client.pull(name, tag=tag, stream=False)
 
 
 def image_exists(name):

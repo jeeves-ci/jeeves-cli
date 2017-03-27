@@ -38,8 +38,10 @@ class JeevesBootstrapper(object,):
         self.postgres_host_ip = postgres_host_ip
         self.master_host_ip = master_host_ip
 
-    def bootstrap(self, num_minions, num_workers, branch='master'):
-        self._pull_base_images()
+    def bootstrap(self, num_minions, num_workers,
+                  branch='master',
+                  verbose=None):
+        self._pull_base_images(verbose=verbose)
         self._start_postgres_container()
         self._start_rabbitmq_container()
 
@@ -79,7 +81,7 @@ class JeevesBootstrapper(object,):
         if not docker.image_exists(full_image_name):
             logger.info('Pulling {} base image..'.format(full_image_name))
             image_name, tag = full_image_name.split(':')
-            docker.pull_image(name=image_name, tag=tag, stream=verbose)
+            docker.pull_image(name=image_name, tag=tag, verbose=verbose)
 
     def _start_master_container(self, branch='master'):
         # Install and start jeeves master
