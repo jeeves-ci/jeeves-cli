@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 
 from decorators import with_client
 from jeeves_cli import utils
@@ -22,7 +23,7 @@ def workflows():
 @click.option('-t', '--tag', required=False,
               help='The tag ID for the Jeeves workflow. If not specified, '
                    'a unique tag ID will be assigned by the Jeeves-Master.')
-@click.option('-e', '--env', required=False,
+@click.option('-e', '--env', required=False, default='{}',
               help='Environment vars associated with the Jeeves workflow.')
 @with_client
 def upload(path, tag, env, client):
@@ -35,7 +36,10 @@ def upload(path, tag, env, client):
     except validate.ValidationError as e:
         raise CLIParameterException('Jeeves yaml is invalid. Error is: {}'
                                     .format(e.message))
-    # TODO: receive env vars
+    try:
+            env = json.loads(env)
+    except ValueError:
+        raise CLIParameterException('Jeeves env must be a valid JSON.')
     workflow, _ = client.workflows.upload(workflow, env or {}, workflow_id=tag)
     print 'Workflow with ID \'{0}\' successfully uploaded. Status is \'{1}\'.'\
           .format(workflow.workflow_id, workflow.status)

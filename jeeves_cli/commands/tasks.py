@@ -4,7 +4,7 @@ from jeeves_cli import utils
 import click
 
 
-@click.group('tasks', help='Task operations.')
+@click.group('tasks', help='Workflow Task operations.')
 def tasks():
     pass
 
