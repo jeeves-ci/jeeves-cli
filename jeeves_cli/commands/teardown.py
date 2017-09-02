@@ -9,6 +9,4 @@ def teardown():
     bootstrapper = JeevesBootstrapper()
     bootstrapper.teardown()
     if storage.get_local_data():
-        storage.set_rabbitmq_ip('')
-        storage.set_postgres_ip('')
-        storage.set_master_ip('')
+        storage.init_local_storage()
