@@ -1,3 +1,4 @@
+# flake8: NOQA
 # -*- coding: utf-8 -*-
 #
 # Jeeves-CLI documentation build configuration file, created by
