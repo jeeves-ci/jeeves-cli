@@ -7,3 +7,7 @@ class CLIParameterException(click.ClickException):
 
 class CLIUnexpectedStateException(click.ClickException):
     pass
+
+
+class CLIRestException(click.ClickException):
+    pass

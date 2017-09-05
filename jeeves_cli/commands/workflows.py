@@ -8,7 +8,8 @@ from jeeves_cli import utils
 import click
 
 from jeeves_commons.dsl import validate
-from jeeves_cli.exceptions import CLIParameterException
+from jeeves_cli.exceptions import CLIParameterException, CLIRestException
+from jeeves_rest_client.rest_client_exceptions import JeevesHttpError
 
 
 @click.group('workflows', help='Workflow operations.')
@@ -40,7 +41,12 @@ def upload(path, tag, env, client):
             env = json.loads(env)
     except ValueError:
         raise CLIParameterException('Jeeves env must be a valid JSON.')
-    workflow, _ = client.workflows.upload(workflow, env or {}, workflow_id=tag)
+    try:
+        workflow, _ = client.workflows.upload(workflow, env or {},
+                                              workflow_id=tag)
+    except JeevesHttpError as e:
+        raise CLIRestException(e.message)
+
     print 'Workflow with ID \'{0}\' successfully uploaded. Status is \'{1}\'.'\
           .format(workflow.workflow_id, workflow.status)
 
@@ -81,6 +87,6 @@ def list(verbose, client):
 
 
 def _print_workflow_data(workflows):
-    headers = ['Workflow-id', 'Status', 'Started-at']
+    headers = ['Workflow-ID', 'Status', 'Started-At']
     keys = ['workflow_id', 'status', 'started_at']
     print utils.format_as_table(data=workflows, keys=keys, header=headers)
