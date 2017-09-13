@@ -87,6 +87,6 @@ def list(verbose, client):
 
 
 def _print_workflow_data(workflows):
-    headers = ['Workflow-ID', 'Status', 'Started-At']
-    keys = ['workflow_id', 'status', 'started_at']
+    headers = ['Workflow-ID', 'Status', 'Started-At', 'Ended-At']
+    keys = ['workflow_id', 'status', 'started_at', 'ended_at']
     print utils.format_as_table(data=workflows, keys=keys, header=headers)
