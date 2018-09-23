@@ -9,10 +9,10 @@ from jeeves_cli.exceptions import CLIParameterException
               help='The Jeeves-Master public IP.')
 def use(public_ip):
     print 'Initializing Jeeves CLI\'s local env.'
-    local_data = storage.get_local_data()
-    if not local_data:
-        raise CLIParameterException('A local jeeves env does\'nt exist.'
+    master_ip = storage.get_master_ip()
+    if master_ip:
+        raise CLIParameterException('A local jeeves already exists.'
                                     'Use the \'jvc init\' command.')
     storage.set_master_ip(public_ip)
 
-    print 'Jeeves CLI now using Jeeves-Master at {0}'
+    print 'Jeeves CLI now using Jeeves-Master at {0}'.format(public_ip)

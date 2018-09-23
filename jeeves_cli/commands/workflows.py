@@ -74,16 +74,18 @@ def get(tag_id, client):
 
 @click.command(name='list',
                help='List all Jeeves Workflow by ID.')
+@click.option('--page', '-p', help='List paginated response', default=0)
+@click.option('--size', '-s', help='List result size', default=100)
 @click.option('--verbose', '-v', is_flag=True, help='All workflow data.',
               default=False)
 @with_client
-def list(verbose, client):
-    workflows, _ = client.workflows.list()
+def list(page, size, verbose, client):
+    workflows, _ = client.workflows.list(page=page, size=size)
     if not verbose:
-        for workflow in workflows:
+        for workflow in workflows.workflows:
             print workflow.workflow_id
     else:
-        _print_workflow_data(workflows)
+        _print_workflow_data(workflows.workflows)
 
 
 def _print_workflow_data(workflows):

@@ -17,20 +17,22 @@ def tasks():
                help='List all Jeeves tasks by workflow id.')
 @click.option('-w', '--workflow-id', required=True,
               help='The workflow tag ID for the Jeeves tasks.')
+@click.option('--page', '-p', help='List paginated response', default=0)
+@click.option('--size', '-s', help='List result size', default=100)
 @click.option('--verbose', '-v', is_flag=True, help='All task data.',
               default=False)
 @with_client
-def list(workflow_id, verbose, client):
+def list(workflow_id, page, size, verbose, client):
     try:
-        tasks_list, _ = client.tasks.list(workflow_id)
+        tasks_list, _ = client.tasks.list(workflow_id, page=page, size=size)
     except JeevesHttpError as e:
         raise CLIRestException(e.message)
 
     if not verbose:
-        for task in tasks_list:
+        for task in tasks_list.tasks:
             print task.task_id
     else:
-        _print_workflow_data(tasks_list)
+        _print_workflow_data(tasks_list.tasks)
 
 
 def _print_workflow_data(tasks_list):

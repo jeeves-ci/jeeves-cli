@@ -145,8 +145,8 @@ class JeevesBootstrapper(object,):
                'python jeeves_minion/minion.py'.format(branch=branch)]
 
         volumes, volume_binds = self._get_service_volumes(
-                                                        '/tmp',
-                                                        *MINION_VOLUMES_LOCAL)
+                                                '/tmp/jeeves-minion-work-dir',
+                                                *MINION_VOLUMES_LOCAL)
         env = {
             RABBITMQ_HOST_IP_ENV: self.rabbit_host_ip,
             POSTGRES_HOST_IP_ENV: self.postgres_host_ip,

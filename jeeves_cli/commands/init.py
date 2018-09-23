@@ -5,7 +5,7 @@ from jeeves_cli.exceptions import CLIParameterException
 
 
 @click.command(name='init', help='Initialize local Jeeves work environment.')
-@click.option('--force', '-f', is_flag=True, help='Block tail operation.',
+@click.option('--force', '-f', is_flag=True, help='Force delete local env',
               default=False)
 def init(force):
     print 'Initializing Jeeves CLI\'s local env.'

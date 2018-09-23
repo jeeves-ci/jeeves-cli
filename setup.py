@@ -19,8 +19,8 @@ setup(
         ]
     },
     install_requires=[
-        'click>=6.7',
+        'click==6.7',
         'docker==2.1',
-        'pyyaml==3.12',
+        'pyyaml==3.13',
     ]
 )
