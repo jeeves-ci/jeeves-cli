@@ -5,14 +5,18 @@ import uuid
 import jeeves_cli.docker_helper as docker
 from jeeves_cli.constants import (PYTHON_DOCKER_IMAGE,
                                   RABBITMQ_DOCKER_IMAGE,
-                                  POSTGRES_DOCKER_IMAGE)
+                                  POSTGRES_DOCKER_IMAGE,)
 from jeeves_commons.constants import (RABBITMQ_HOST_IP_ENV,
                                       POSTGRES_HOST_IP_ENV,
                                       NUM_MINION_WORKERS_ENV,
+                                      JEEVES_ADMIN_EMAIL_ENV,
+                                      JEEVES_ADMIN_PASSWORD_ENV,
                                       DEFAULT_BROKER_PORT,
                                       DEFAULT_POSTGRES_PORT,
                                       MASTER_HOST_PORT_ENV,
-                                      DEFAULT_REST_PORT)
+                                      DEFAULT_REST_PORT,
+                                      DEFAULT_JEEVES_ADMIN_EMAIL,
+                                      DEFAULT_JEEVES_ADMIN_PASSWORD)
 from jeeves_commons.utils import wait_for_port, which
 
 
@@ -38,9 +42,15 @@ class JeevesBootstrapper(object,):
         self.postgres_host_ip = postgres_host_ip
         self.master_host_ip = master_host_ip
 
-    def bootstrap(self, num_minions, num_workers,
+    def bootstrap(self,
+                  num_minions,
+                  num_workers,
+                  username=DEFAULT_JEEVES_ADMIN_EMAIL,
+                  password=DEFAULT_JEEVES_ADMIN_PASSWORD,
                   branch='master',
                   verbose=None):
+        self.username = username
+        self.password = password
         self._pull_base_images(verbose=verbose)
         self._start_postgres_container()
         self._start_rabbitmq_container()
@@ -94,7 +104,9 @@ class JeevesBootstrapper(object,):
         env = {
             RABBITMQ_HOST_IP_ENV: self.rabbit_host_ip,
             POSTGRES_HOST_IP_ENV: self.postgres_host_ip,
-            MASTER_HOST_PORT_ENV: DEFAULT_REST_PORT
+            MASTER_HOST_PORT_ENV: DEFAULT_REST_PORT,
+            JEEVES_ADMIN_EMAIL_ENV: self.username,
+            JEEVES_ADMIN_PASSWORD_ENV: self.password,
         }
         volumes, volume_binds = self._get_service_volumes('/tmp')
         logger.info('Starting Jeeves master container..')

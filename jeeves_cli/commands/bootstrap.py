@@ -1,4 +1,5 @@
 import subprocess
+from decorators import with_client
 
 import click
 
@@ -38,12 +39,20 @@ def bootstrap(number_of_minions,
               help='The Jeeves branch to bootstrap from. Default is set '
                    'to \'master\'',
               default='master')
+@click.option('-u', '--username', required=False,
+              help='The Jeeves-Master email address')
+@click.option('-p', '--password', required=False,
+              help='The Jeeves-Master password')
 @click.option('--verbose', '-v', is_flag=True, help='View verbose info.',
               default=False)
+@with_client
 def bootstrap_local(number_of_minions,
                     number_of_workers,
                     branch,
-                    verbose):
+                    username,
+                    password,
+                    verbose,
+                    client):
     local_data = storage.get_local_data()
     if local_data:
         raise CLIParameterException('Local env already exists. '
@@ -58,16 +67,21 @@ def bootstrap_local(number_of_minions,
                                     ' in privileged mode. Please run '
                                     '\'sudo usermod -aG docker $USER\''
                                     ' and start a new bash session.')
-
     bs = JeevesBootstrapper()
     bs.bootstrap(num_minions=number_of_minions,
                  num_workers=number_of_workers,
+                 username=username,
+                 password=password,
                  branch=branch,
                  verbose=verbose)
 
     storage.set_rabbitmq_ip(bs.rabbit_host_ip)
     storage.set_postgres_ip(bs.postgres_host_ip)
     storage.set_master_ip(bs.master_host_ip)
+
+    res, _ = client.login.login(username=username, password=password)
+    storage.set_access_token(res.access_token)
+
     print 'Jeeves local-bootstrap ended successfully.'
     print 'RESTful endpoint available at {0}:{1}'\
           .format(bs.master_host_ip, '8080')

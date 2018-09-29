@@ -38,6 +38,12 @@ class LocalStorage(object):
     def get_master_ip(self):
         return self.get_local_data().get('master_ip')
 
+    def get_access_token(self):
+        return self.get_local_data().get('access_token')
+
+    def set_access_token(self, token):
+        self._set_key('access_token', token)
+
     def _set_key(self, key, val):
         local_data = self.get_local_data()
         local_data.update({key: val})

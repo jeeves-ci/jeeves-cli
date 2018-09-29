@@ -1,4 +1,5 @@
 from jeeves_cli.commands import use
+from jeeves_cli.commands import login
 from jeeves_cli.commands import init
 from jeeves_cli.commands import teardown
 from jeeves_cli.commands import bootstrap
@@ -16,6 +17,7 @@ def _jvc():
 def _add_commands():
     _jvc.add_command(init.init)
     _jvc.add_command(use.use)
+    _jvc.add_command(login.login)
 
     _jvc.add_command(bootstrap.bootstrap)
     _jvc.add_command(bootstrap.bootstrap_local)
