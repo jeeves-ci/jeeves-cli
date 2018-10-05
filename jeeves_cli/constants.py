@@ -11,3 +11,6 @@ CLI_LOCAL_DATA_FILE = os.path.join(CLI_WORKDIR, 'jvc_data.json')
 RABBITMQ_DOCKER_IMAGE = 'rabbitmq:latest'
 PYTHON_DOCKER_IMAGE = 'python:2.7'
 POSTGRES_DOCKER_IMAGE = 'postgres:latest'
+
+JEEVES_MASTER_DOCKER_IMAGE = 'adamlavie/jeeves-master:master'
+JEEVES_MINION_DOCKER_IMAGE = 'adamlavie/jeeves-minion:master'

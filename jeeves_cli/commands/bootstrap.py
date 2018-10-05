@@ -1,10 +1,13 @@
 import subprocess
-from decorators import with_client
 
 import click
 
 from jeeves_commons.constants import (DEFAULT_NUM_MINION_WORKERS,
-                                      DEFAULT_NUM_OF_MINIONS)
+                                      DEFAULT_NUM_OF_MINIONS,
+                                      DEFAULT_JEEVES_ADMIN_EMAIL,
+                                      DEFAULT_JEEVES_ADMIN_PASSWORD)
+from jeeves_rest_client.client import JeevesClient
+
 from jeeves_cli.exceptions import CLIParameterException
 from jeeves_cli.local_storage import storage
 from jeeves_cli.bootstraper import JeevesBootstrapper
@@ -38,21 +41,21 @@ def bootstrap(number_of_minions,
 @click.option('-b', '--branch', required=False,
               help='The Jeeves branch to bootstrap from. Default is set '
                    'to \'master\'',
-              default='master')
+              default=None)
 @click.option('-u', '--username', required=False,
-              help='The Jeeves-Master email address')
+              help='The Jeeves-Master email address',
+              default=DEFAULT_JEEVES_ADMIN_EMAIL)
 @click.option('-p', '--password', required=False,
-              help='The Jeeves-Master password')
+              help='The Jeeves-Master password',
+              default=DEFAULT_JEEVES_ADMIN_PASSWORD)
 @click.option('--verbose', '-v', is_flag=True, help='View verbose info.',
               default=False)
-@with_client
 def bootstrap_local(number_of_minions,
                     number_of_workers,
                     branch,
                     username,
                     password,
-                    verbose,
-                    client):
+                    verbose):
     local_data = storage.get_local_data()
     if local_data:
         raise CLIParameterException('Local env already exists. '
@@ -79,6 +82,7 @@ def bootstrap_local(number_of_minions,
     storage.set_postgres_ip(bs.postgres_host_ip)
     storage.set_master_ip(bs.master_host_ip)
 
+    client = JeevesClient(host=bs.master_host_ip)
     res, _ = client.login.login(username=username, password=password)
     storage.set_access_token(res.access_token)
 

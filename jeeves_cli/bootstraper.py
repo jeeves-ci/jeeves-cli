@@ -5,18 +5,20 @@ import uuid
 import jeeves_cli.docker_helper as docker
 from jeeves_cli.constants import (PYTHON_DOCKER_IMAGE,
                                   RABBITMQ_DOCKER_IMAGE,
+                                  JEEVES_MASTER_DOCKER_IMAGE,
+                                  JEEVES_MINION_DOCKER_IMAGE,
                                   POSTGRES_DOCKER_IMAGE,)
 from jeeves_commons.constants import (RABBITMQ_HOST_IP_ENV,
+                                      RABBITMQ_HOST_PORT_ENV,
                                       POSTGRES_HOST_IP_ENV,
                                       NUM_MINION_WORKERS_ENV,
                                       JEEVES_ADMIN_EMAIL_ENV,
                                       JEEVES_ADMIN_PASSWORD_ENV,
+                                      POSTGRES_HOST_PORT_ENV,
                                       DEFAULT_BROKER_PORT,
                                       DEFAULT_POSTGRES_PORT,
                                       MASTER_HOST_PORT_ENV,
-                                      DEFAULT_REST_PORT,
-                                      DEFAULT_JEEVES_ADMIN_EMAIL,
-                                      DEFAULT_JEEVES_ADMIN_PASSWORD)
+                                      DEFAULT_REST_PORT)
 from jeeves_commons.utils import wait_for_port, which
 
 
@@ -45,13 +47,14 @@ class JeevesBootstrapper(object,):
     def bootstrap(self,
                   num_minions,
                   num_workers,
-                  username=DEFAULT_JEEVES_ADMIN_EMAIL,
-                  password=DEFAULT_JEEVES_ADMIN_PASSWORD,
-                  branch='master',
+                  username=None,
+                  password=None,
+                  branch=None,
                   verbose=None):
         self.username = username
         self.password = password
-        self._pull_base_images(verbose=verbose)
+        # if no branch not provided, bootstrap using existing images
+        self._pull_base_images(all=branch is None, verbose=verbose)
         self._start_postgres_container()
         self._start_rabbitmq_container()
 
@@ -79,10 +82,14 @@ class JeevesBootstrapper(object,):
     def kill_client_by_ip(ip):
         return docker.remove_container_by_ip(ip=ip)
 
-    def _pull_base_images(self, verbose=False):
+    def _pull_base_images(self, all=False, verbose=False):
         logger.info('Pulling required docker images..')
-
-        self._pull_image(PYTHON_DOCKER_IMAGE, verbose=verbose)
+        if all:
+            self._pull_image(JEEVES_MASTER_DOCKER_IMAGE, verbose=verbose)
+            self._pull_image(JEEVES_MINION_DOCKER_IMAGE, verbose=verbose)
+        else:
+            # the branch will be installed on a base image
+            self._pull_image(PYTHON_DOCKER_IMAGE, verbose=verbose)
         self._pull_image(POSTGRES_DOCKER_IMAGE, verbose=verbose)
         self._pull_image(RABBITMQ_DOCKER_IMAGE, verbose=verbose)
 
@@ -93,17 +100,24 @@ class JeevesBootstrapper(object,):
             image_name, tag = full_image_name.split(':')
             docker.pull_image(name=image_name, tag=tag, verbose=verbose)
 
-    def _start_master_container(self, branch='master'):
-        # Install and start jeeves master
-        cmd = ['sh', '-c', '-e',
-               'git clone https://github.com/jeeves-ci/jeeves-master.git && '
-               'cd jeeves-master && '
-               'git checkout {branch} && '
-               'pip install -r requirements.txt . && '
-               'python rest_service/server.py'.format(branch=branch)]
+    def _start_master_container(self, branch=None):
+        image_name = PYTHON_DOCKER_IMAGE
+        cmd = ['sh', '-c', '-e', 'python rest_service/server.py']
+        if branch:
+            # Install and start jeeves master
+            cmd = ['sh', '-c', '-e',
+                   'git clone https://github.com/jeeves-ci/jeeves-master.git && '# noqa
+                   'cd jeeves-master && '
+                   'git checkout {branch} && '
+                   'pip install -r requirements.txt . && '
+                   'python rest_service/server.py'.format(branch=branch)]
+        else:
+            image_name = JEEVES_MASTER_DOCKER_IMAGE
         env = {
             RABBITMQ_HOST_IP_ENV: self.rabbit_host_ip,
             POSTGRES_HOST_IP_ENV: self.postgres_host_ip,
+            POSTGRES_HOST_PORT_ENV: DEFAULT_POSTGRES_PORT,
+            RABBITMQ_HOST_PORT_ENV: DEFAULT_BROKER_PORT,
             MASTER_HOST_PORT_ENV: DEFAULT_REST_PORT,
             JEEVES_ADMIN_EMAIL_ENV: self.username,
             JEEVES_ADMIN_PASSWORD_ENV: self.password,
@@ -111,7 +125,7 @@ class JeevesBootstrapper(object,):
         volumes, volume_binds = self._get_service_volumes('/tmp')
         logger.info('Starting Jeeves master container..')
         cid = docker.create_and_start_container(
-                                 PYTHON_DOCKER_IMAGE,
+                                 image_name,
                                  name=MASTER_CONT_NAME,
                                  command=cmd,
                                  environment=env,
@@ -145,16 +159,21 @@ class JeevesBootstrapper(object,):
     def start_minion_containers(self,
                                 num_minions=None,
                                 num_workers='',
-                                branch='master'):
+                                branch=None):
         logger.info('Starting {} Jeeves minion containers..'
                     .format(num_minions))
-        # Install the minion on each of the containers
-        cmd = ['sh', '-c', '-e',
-               'git clone https://github.com/jeeves-ci/jeeves-minion.git && '
-               'cd jeeves-minion && '
-               'git checkout {branch} && '
-               'pip install -r requirements.txt . && '
-               'python jeeves_minion/minion.py'.format(branch=branch)]
+        image_name = PYTHON_DOCKER_IMAGE
+        cmd = ['sh', '-c', '-e', 'python jeeves_minion/minion.py']
+        if branch:
+            # Install the minion on each of the containers
+            cmd = ['sh', '-c', '-e',
+                   'git clone https://github.com/jeeves-ci/jeeves-minion.git && '# noqa
+                   'cd jeeves-minion && '
+                   'git checkout {branch} && '
+                   'pip install -r requirements.txt . && '
+                   'python jeeves_minion/minion.py'.format(branch=branch)]
+        else:
+            image_name = JEEVES_MINION_DOCKER_IMAGE
 
         volumes, volume_binds = self._get_service_volumes(
                                                 '/tmp/jeeves-minion-work-dir',
@@ -162,12 +181,14 @@ class JeevesBootstrapper(object,):
         env = {
             RABBITMQ_HOST_IP_ENV: self.rabbit_host_ip,
             POSTGRES_HOST_IP_ENV: self.postgres_host_ip,
+            POSTGRES_HOST_PORT_ENV: DEFAULT_POSTGRES_PORT,
+            RABBITMQ_HOST_PORT_ENV: DEFAULT_BROKER_PORT,
             NUM_MINION_WORKERS_ENV: num_workers
         }
 
         for i in xrange(num_minions):
             cid = docker.create_and_start_container(
-                                   PYTHON_DOCKER_IMAGE,
+                                   image_name,
                                    name='{0}_{1}'
                                         .format(MINION_CONT_NAME_PREFIX,
                                                 str(uuid.uuid4())),
