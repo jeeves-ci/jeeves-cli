@@ -69,7 +69,8 @@ def bootstrap_local(number_of_minions,
         raise CLIParameterException('Jeeves CLI can not run docker containers'
                                     ' in privileged mode. Please run '
                                     '\'sudo usermod -aG docker $USER\''
-                                    ' and start a new bash session.')
+                                    ' and login again or run:'
+                                    '\'su - $USER\'')
     bs = JeevesBootstrapper()
     bs.bootstrap(num_minions=number_of_minions,
                  num_workers=number_of_workers,
